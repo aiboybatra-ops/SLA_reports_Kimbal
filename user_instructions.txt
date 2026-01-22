@@ -4,7 +4,7 @@
 This system processes raw data files and generates daily SLA reports. Each user runs the system locally on their desktop to generate reports from shared SharePoint data.
 
 ## Prerequisites
-- Python 3.x installed on your Mac
+- Python 3.x installed on your machine
 - SharePoint files synchronized locally (OneDrive for Business)
 - Raw data files uploaded to SharePoint in the correct date/DG structure
 
@@ -23,8 +23,15 @@ This system processes raw data files and generates daily SLA reports. Each user 
    sharepoint_path = Path('/Users/rishubatra/Library/CloudStorage/OneDrive-SharedLibraries-SinhalUdyogpvtltd/Communication site - Daily_SLA_Reporting')
    ```
 3. Replace the path with your local SharePoint sync path:
-   - Your path typically looks like: `/Users/[your-username]/Library/CloudStorage/OneDrive-SharedLibraries-[organization]/Communication site - Daily_SLA_Reporting`
-   - To find your path: Open Finder → Go to OneDrive folder → Right-click on "Communication site - Daily_SLA_Reporting" → "Get Info" → Copy the location
+   - **Mac users**: Path typically looks like: `/Users/[your-username]/Library/CloudStorage/OneDrive-SharedLibraries-[organization]/Communication site - Daily_SLA_Reporting`
+   - **Windows users**: Path typically looks like: `C:/Users/[your-username]/OneDrive - [organization]/Communication site - Daily_SLA_Reporting` or `C:/Users/[your-username]/OneDriveCommercial/Communication site - Daily_SLA_Reporting`
+   - **Linux users**: Path typically looks like: `/home/[your-username]/OneDrive/Communication site - Daily_SLA_Reporting` or similar
+   
+   To find your path:
+   - **Mac**: Open Finder → Go to OneDrive folder → Right-click on "Communication site - Daily_SLA_Reporting" → "Get Info" → Copy the location
+   - **Windows**: Open File Explorer → Go to OneDrive folder → Right-click on "Communication site - Daily_SLA_Reporting" → "Properties" → "Location" tab
+   - **Linux**: Use file manager or navigate to the OneDrive folder in terminal
+
 4. Save the file
 
 ## Daily Usage
@@ -42,12 +49,22 @@ Before running the script, ensure your raw data files are uploaded to SharePoint
   - `Routings Part-2.xlsx` (optional - can have multiple routing files)
 
 ### 2. Run the Script
-1. Open Terminal application on your Mac
+1. **Mac/Linux**: Open Terminal application
+   **Windows**: Open Command Prompt or PowerShell
 2. Run the command:
    ```bash
    python3 ~/Desktop/DailySLAReporting/daily_reporter.py
    ```
    (Change the path if you saved the folder somewhere other than Desktop)
+   
+   **For Windows users**, the command might be:
+   ```cmd
+   python C:\\Users\\[your-username]\\Desktop\\DailySLAReporting\\daily_reporter.py
+   ```
+   or
+   ```powershell
+   py .\\Desktop\\DailySLAReporting\\daily_reporter.py
+   ```
 
 ### 3. Check Results
 After the script completes, you'll find output files in:
@@ -82,7 +99,7 @@ After the script completes, you'll find output files in:
 1. **"File not found" errors**: Check that your SharePoint path is correct in the script
 2. **Validation errors**: Upload corrected files to SharePoint and run again
 3. **Permission errors**: Ensure you have read/write access to the SharePoint folders
-4. **Python not found**: Install Python 3.x or use `python3` instead of `python`
+4. **Python not found**: Install Python 3.x or use `python3` instead of `python` (Mac/Linux) or `py` instead of `python` (Windows)
 
 ### Error Messages:
 - ❌ FILE VALIDATION ISSUES: Upload the correct files to SharePoint
