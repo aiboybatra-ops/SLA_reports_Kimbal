@@ -1,0 +1,103 @@
+# Daily SLA Reporting System - User Instructions
+
+## Overview
+This system processes raw data files and generates daily SLA reports. Each user runs the system locally on their desktop to generate reports from shared SharePoint data.
+
+## Prerequisites
+- Python 3.x installed on your Mac
+- SharePoint files synchronized locally (OneDrive for Business)
+- Raw data files uploaded to SharePoint in the correct date/DG structure
+
+## Initial Setup
+
+### 1. Download the Script
+1. Copy the entire `DailySLAReporting` folder to your Desktop
+2. The folder contains:
+   - `daily_reporter.py` - Main script
+   - Other supporting files
+
+### 2. Configure SharePoint Path
+1. Open `daily_reporter.py` in a text editor (TextEdit, VSCode, etc.)
+2. Find the line near the bottom that looks like:
+   ```python
+   sharepoint_path = Path('/Users/rishubatra/Library/CloudStorage/OneDrive-SharedLibraries-SinhalUdyogpvtltd/Communication site - Daily_SLA_Reporting')
+   ```
+3. Replace the path with your local SharePoint sync path:
+   - Your path typically looks like: `/Users/[your-username]/Library/CloudStorage/OneDrive-SharedLibraries-[organization]/Communication site - Daily_SLA_Reporting`
+   - To find your path: Open Finder → Go to OneDrive folder → Right-click on "Communication site - Daily_SLA_Reporting" → "Get Info" → Copy the location
+4. Save the file
+
+## Daily Usage
+
+### 1. Prepare Data Files
+Before running the script, ensure your raw data files are uploaded to SharePoint:
+- Navigate to: `[SharePoint Root]/[Today's Date]/Report_1_Comms_Reporting/DG1/raw_data/` (or DG2, DG3, etc.)
+- Upload these files:
+  - `Warehouse.csv`
+  - `New_Service_connection.csv`
+  - `Merged_CI-MI.csv`
+  - `Meter_Installation.csv`
+  - `Node ID.xlsx`
+  - `Routings Part-1.xlsx` (optional - can have multiple routing files)
+  - `Routings Part-2.xlsx` (optional - can have multiple routing files)
+
+### 2. Run the Script
+1. Open Terminal application on your Mac
+2. Run the command:
+   ```bash
+   python3 ~/Desktop/DailySLAReporting/daily_reporter.py
+   ```
+   (Change the path if you saved the folder somewhere other than Desktop)
+
+### 3. Check Results
+After the script completes, you'll find output files in:
+- `[SharePoint Root]/[Today's Date]/Report_1_Comms_Reporting/DG1/output/` (or DG2, DG3, etc.)
+- Generated files:
+  - `Master_SLA_Report_[DATE].csv`
+  - `Intermediate_SLA_Report_[DATE].csv`
+  - `Final_SLA_Report_[DATE].csv`
+  - `SLA_Summary_DG1_[DATE].json`
+
+## Validation Checks Performed
+
+### 1. File Name Validation
+- The script checks that all expected files are present
+- If files are missing or incorrectly named, you'll see an error message
+- Fix the files in SharePoint and run the script again
+
+### 2. Column Name Validation
+- The script validates that each file has the correct column headers
+- If columns are missing or misnamed, you'll see which files need correction
+- Update the files in SharePoint and run the script again
+
+### 3. Data Processing Summary
+- After processing, the script displays in the terminal:
+  - Final communication status summary (Communicating/Never Comm/Non Comm)
+  - Missing data summary
+  - Mapping summary showing how many records were successfully merged
+
+## Troubleshooting
+
+### Common Issues:
+1. **"File not found" errors**: Check that your SharePoint path is correct in the script
+2. **Validation errors**: Upload corrected files to SharePoint and run again
+3. **Permission errors**: Ensure you have read/write access to the SharePoint folders
+4. **Python not found**: Install Python 3.x or use `python3` instead of `python`
+
+### Error Messages:
+- ❌ FILE VALIDATION ISSUES: Upload the correct files to SharePoint
+- ❌ Column validation failed: Fix column names in your data files
+- ✅ All expected files present: Files are correctly named
+- ✅ All file columns validated successfully: Column names are correct
+
+## Output Files Explained
+
+1. **Master_SLA_Report_[DATE].csv**: Combined data from all sources
+2. **Intermediate_SLA_Report_[DATE].csv**: Selected columns before communication status calculation
+3. **Final_SLA_Report_[DATE].csv**: Final report with communication status and remarks column
+4. **SLA_Summary_DGx_[DATE].json**: JSON summary with communication status and missing data counts
+
+## Running the Script Multiple Times
+- You can run the script multiple times in a day
+- It will overwrite existing output files with fresh results
+- If you want to preserve previous runs, rename or move the output files before re-running
