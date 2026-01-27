@@ -668,8 +668,21 @@ class DailyReporter:
                 "Non Comm": int(comm_counts.get("Non Comm", 0)),
             }
             
-            # Comm Status by Subdivision (reserved for future extension)
-            # Intentionally omitted from JSON summary for now.
+            # Comm Status by Subdivision
+            if 'Subdivision' in df_final.columns:
+                subdivision_summary = {}
+                for subdivision in df_final['Subdivision'].dropna().unique():
+                    subdivision_data = df_final[df_final['Subdivision'] == subdivision]
+                    subdivision_comm_counts = subdivision_data['Comm Status'].value_counts().to_dict()
+                    subdivision_summary[str(subdivision)] = {
+                        "Communicating": int(subdivision_comm_counts.get("Communicating", 0)),
+                        "Never Comm": int(subdivision_comm_counts.get("Never Comm", 0)),
+                        "Non Comm": int(subdivision_comm_counts.get("Non Comm", 0)),
+                        "Total": int(len(subdivision_data))
+                    }
+                summary["comm_status_by_subdivision"] = subdivision_summary
+            else:
+                summary["comm_status_by_subdivision"] = {}
             
             # Missing data summary from earlier stats
             missing_node = locals().get("missing_node", None)
@@ -689,14 +702,60 @@ class DailyReporter:
             summary_output_path = paths["output"] / f"SLA_Summary_{dg_name}_{self.today_date}.json"
             with open(summary_output_path, "w", encoding="utf-8") as f:
                 json.dump(summary, f, ensure_ascii=False, indent=2)
-            print(f"📄 Summary file created: {summary_output_path.name}")
+            print(f"📄 JSON Summary file created: {summary_output_path.name}")
+            
+            # 10. Create CSV Summary Report (Overall + By Subdivision)
+            print(f"📝 Creating CSV summary report...")
+            
+            # Prepare overall summary row
+            overall_row = {
+                "Category": "Overall",
+                "Subdivision": "All",
+                "Communicating": summary['comm_status_overall']['Communicating'],
+                "Never Comm": summary['comm_status_overall']['Never Comm'],
+                "Non Comm": summary['comm_status_overall']['Non Comm'],
+                "Total": summary['total_records']
+            }
+            
+            # Prepare subdivision rows
+            subdivision_rows = []
+            if 'comm_status_by_subdivision' in summary and summary['comm_status_by_subdivision']:
+                for subdiv, counts in summary['comm_status_by_subdivision'].items():
+                    subdivision_rows.append({
+                        "Category": "By Subdivision",
+                        "Subdivision": subdiv,
+                        "Communicating": counts['Communicating'],
+                        "Never Comm": counts['Never Comm'],
+                        "Non Comm": counts['Non Comm'],
+                        "Total": counts['Total']
+                    })
+            
+            # Combine and create DataFrame
+            summary_data = [overall_row] + subdivision_rows
+            df_summary = pd.DataFrame(summary_data)
+            
+            # Save CSV summary report
+            summary_csv_path = paths["output"] / f"Communication_Status_Summary_{dg_name}_{self.today_date}.csv"
+            df_summary.to_csv(summary_csv_path, index=False)
+            print(f"✨ CSV Summary report created: {summary_csv_path.name}")
             
             # Print final summary to terminal
             print(f"\n📊 FINAL COMM STATUS SUMMARY FOR {dg_name}:")
+            print(f"\n=== OVERALL ===")
             print(f"   Communicating: {summary['comm_status_overall']['Communicating']}")
             print(f"   Never Comm: {summary['comm_status_overall']['Never Comm']}")
             print(f"   Non Comm: {summary['comm_status_overall']['Non Comm']}")
             print(f"   Total Records: {summary['total_records']}")
+            
+            # Print subdivision breakdown
+            if 'comm_status_by_subdivision' in summary and summary['comm_status_by_subdivision']:
+                print(f"\n=== BY SUBDIVISION ===")
+                for subdiv, counts in sorted(summary['comm_status_by_subdivision'].items()):
+                    print(f"\n   {subdiv}:")
+                    print(f"      Communicating: {counts['Communicating']}")
+                    print(f"      Never Comm: {counts['Never Comm']}")
+                    print(f"      Non Comm: {counts['Non Comm']}")
+                    print(f"      Total: {counts['Total']}")
             
             # Print missing data summary
             missing_summary = summary['missing_data_summary']
@@ -717,7 +776,9 @@ class DailyReporter:
                     unmapped = mapping_stats['unmapped']
                     print(f"   {source_name}: Total={total}, Mapped={mapped}, Unmapped={unmapped}")
             
-        print(f"\n✅ Processing completed for all DG subfolders")
+        print(f"\n{'='*60}")
+        print(f"✅ Processing completed for all DG subfolders")
+        print(f"{'='*60}")
         return True
     
     def get_expected_files(self):
