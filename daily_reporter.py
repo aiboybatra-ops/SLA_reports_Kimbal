@@ -323,25 +323,52 @@ class DailyReporter:
         
         return sorted(files)
     
+    def create_default_dg_structure(self, report_name):
+        """Create default DG subfolders (DG1, DG2, DG3) if they don't exist"""
+        report_folder = self.report_date_folder / report_name
+        default_dgs = ["DG1", "DG2", "DG3"]
+        
+        print(f"\n📁 Creating default DG folder structure...")
+        for dg_name in default_dgs:
+            dg_folder = report_folder / dg_name
+            raw_data_folder = dg_folder / "raw_data"
+            output_folder = dg_folder / "output"
+            
+            raw_data_folder.mkdir(parents=True, exist_ok=True)
+            output_folder.mkdir(parents=True, exist_ok=True)
+            print(f"   ✓ Created {dg_name} structure")
+        
+        print(f"✅ Default DG folders created: {', '.join(default_dgs)}")
+        return default_dgs
+    
     def process_comms_reporting(self):
         """Process Communications Reporting for all DG subfolders"""
         report_name = "Report_1_Comms_Reporting"
         print(f"\n{'='*60}")
         print(f"Processing {report_name} for {self.today_date}")
         print(f"{'='*60}\n")
+        
+        # Create date folder if it doesn't exist
+        self.report_date_folder.mkdir(parents=True, exist_ok=True)
+        print(f"✓ Date folder ensured: {self.report_date_folder}")
             
-        # Create main folder structure and notify Teams
+        # Create main folder structure and notify
         main_paths = self.create_structure(report_name)
         self.notify_folder_creation()
                 
         # Get all DG subfolder structures
         dg_structures = self.get_dg_report_structures(report_name)
                 
-
-                
+        # If no DG subfolders exist, create default ones (DG1, DG2, DG3)
         if not dg_structures:
-            print(f"❌ No DG subfolders found in {report_name}")
-            print(f"   Expected pattern: {report_name}/DG*/raw_data/")
+            print(f"\n⚠️ No existing DG subfolders found in {report_name}")
+            print(f"   Creating default DG structure...")
+            default_dgs = self.create_default_dg_structure(report_name)
+            # Re-fetch structures after creation
+            dg_structures = self.get_dg_report_structures(report_name)
+            
+        if not dg_structures:
+            print(f"❌ Failed to create DG subfolders")
             return False
                 
         print(f"📁 Found {len(dg_structures)} DG subfolder(s): {list(dg_structures.keys())}")
@@ -869,12 +896,22 @@ class DailyReporter:
             print(f"   Date: {self.today_date}")
             print(f"   Base Path: {self.base_path}")
             
+            # Ensure base path exists
+            if not self.base_path.exists():
+                print(f"\n❌ Error: SharePoint base path does not exist: {self.base_path}")
+                print(f"   Please ensure OneDrive is syncing and the path is correct.")
+                sys.exit(1)
+            
             self.process_comms_reporting()
             
             print(f"\n✅ Process completed")
+            print(f"\n📂 Folder structure ready at: {self.report_date_folder}")
+            print(f"   You can now upload raw data files to the DG*/raw_data/ folders")
             
         except Exception as e:
             print(f"\n❌ Error: {e}")
+            import traceback
+            traceback.print_exc()
             sys.exit(1)
 
 
