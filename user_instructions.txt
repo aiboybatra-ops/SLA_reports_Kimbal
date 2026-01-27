@@ -1,120 +1,769 @@
-# Daily SLA Reporting System - User Instructions
+# Daily SLA Reporting System - Complete User Guide
 
 ## Overview
-This system processes raw data files and generates daily SLA reports. Each user runs the system locally on their desktop to generate reports from shared SharePoint data.
+This system automates the processing of raw SLA data files and generates comprehensive daily reports. The system runs locally on your Windows computer and processes files stored in SharePoint.
+
+## What This System Does
+1. **Automatically creates** daily folder structures at 10 AM (if scheduled)
+2. **Validates** uploaded data files for correct naming and column headers
+3. **Merges** data from multiple sources (Warehouse, Node ID, Routing, etc.)
+4. **Generates** multiple reports including communication status summaries
+5. **Outputs** results back to SharePoint for team access
 
 ## Prerequisites
-- Python 3.x installed on your machine
-- SharePoint files synchronized locally (OneDrive for Business)
-- Raw data files uploaded to SharePoint in the correct date/DG structure
+- Windows 10 or later
+- Python 3.7 or higher installed
+- OneDrive for Business installed and syncing
+- Access to SharePoint "Daily_SLA_Reporting" site
+- Network access to SharePoint during processing
 
-## Initial Setup
+## Initial Setup (One-Time)
 
-### 1. Download the Script
-1. Copy the entire `DailySLAReporting` folder to your Desktop
-2. The folder contains:
-   - `daily_reporter.py` - Main script
-   - Other supporting files
+### Step 1: Install Python
 
-### 2. Configure SharePoint Path
-1. Open `daily_reporter.py` in a text editor (TextEdit, VSCode, etc.)
-2. Find the line near the bottom that looks like:
+1. Check if Python is already installed:
+   - Open Command Prompt: Press `Win + R`, type `cmd`, press Enter
+   - Type: `python --version` and press Enter
+   - If you see "Python 3.x.x", skip to Step 2
+
+2. If Python is not installed:
+   - Go to https://www.python.org/downloads/
+   - Download Python 3.11 or later for Windows
+   - Run the installer
+   - ⚠️ **IMPORTANT**: Check the box "Add Python to PATH" during installation
+   - Click "Install Now"
+   - Restart your computer after installation
+
+### Step 2: Download the Script from GitHub
+
+1. Open your web browser and go to:
+   ```
+   https://github.com/aiboybatra-ops/SLA_reports_Kimbal
+   ```
+
+2. Click the green "Code" button, then click "Download ZIP"
+
+3. Save the ZIP file to your Desktop
+
+4. Right-click the ZIP file → "Extract All..."
+
+5. Extract to: `C:\Users\[YourUsername]\Desktop\DailySLAReporting`
+   (Replace [YourUsername] with your actual Windows username)
+
+### Step 3: Find Your SharePoint Sync Path
+
+1. Open File Explorer (Windows key + E)
+
+2. Look in the left sidebar for "OneDrive - [Your Organization Name]"
+
+3. Navigate to: `OneDrive - [Organization] → Communication site - Daily_SLA_Reporting`
+
+4. Click in the address bar at the top, the full path will be highlighted
+
+5. Right-click and copy the path. It will look something like:
+   ```
+   C:\Users\JohnDoe\OneDrive - CompanyName\Communication site - Daily_SLA_Reporting
+   ```
+   OR
+   ```
+   C:\Users\JohnDoe\OneDriveCommercial\Communication site - Daily_SLA_Reporting
+   ```
+
+6. **Write down or save this path** - you'll need it in the next step
+
+### Step 4: Configure the Script
+
+1. Open File Explorer and navigate to:
+   ```
+   C:\Users\[YourUsername]\Desktop\DailySLAReporting
+   ```
+
+2. Right-click on `daily_reporter.py` → "Edit with Notepad" (or use Notepad++, VS Code)
+
+3. Scroll to the **very bottom** of the file (usually around line 920)
+
+4. Find this line:
    ```python
    sharepoint_path = Path('/Users/rishubatra/Library/CloudStorage/OneDrive-SharedLibraries-SinhalUdyogpvtltd/Communication site - Daily_SLA_Reporting')
    ```
-3. Replace the path with your local SharePoint sync path:
-   - **Mac users**: Path typically looks like: `/Users/[your-username]/Library/CloudStorage/OneDrive-SharedLibraries-[organization]/Communication site - Daily_SLA_Reporting`
-   - **Windows users**: Path typically looks like: `C:/Users/[your-username]/OneDrive - [organization]/Communication site - Daily_SLA_Reporting` or `C:/Users/[your-username]/OneDriveCommercial/Communication site - Daily_SLA_Reporting`
-   - **Linux users**: Path typically looks like: `/home/[your-username]/OneDrive/Communication site - Daily_SLA_Reporting` or similar
-   
-   To find your path:
-   - **Mac**: Open Finder → Go to OneDrive folder → Right-click on "Communication site - Daily_SLA_Reporting" → "Get Info" → Copy the location
-   - **Windows**: Open File Explorer → Go to OneDrive folder → Right-click on "Communication site - Daily_SLA_Reporting" → "Properties" → "Location" tab
-   - **Linux**: Use file manager or navigate to the OneDrive folder in terminal
 
-4. Save the file
-
-## Daily Usage
-
-### 1. Prepare Data Files
-Before running the script, ensure your raw data files are uploaded to SharePoint:
-- Navigate to: `[SharePoint Root]/[Today's Date]/Report_1_Comms_Reporting/DG1/raw_data/` (or DG2, DG3, etc.)
-- Upload these files:
-  - `Warehouse.csv`
-  - `New_Service_connection.csv`
-  - `Merged_CI-MI.csv`
-  - `Meter_Installation.csv`
-  - `Node ID.xlsx`
-  - `Routings Part-1.xlsx` (optional - can have multiple routing files)
-  - `Routings Part-2.xlsx` (optional - can have multiple routing files)
-
-### 2. Run the Script
-1. **Mac/Linux**: Open Terminal application
-   **Windows**: Open Command Prompt or PowerShell
-2. Run the command:
-   ```bash
-   python3 ~/Desktop/DailySLAReporting/daily_reporter.py
+5. Replace the entire path with YOUR SharePoint path from Step 3:
+   ```python
+   sharepoint_path = Path('C:/Users/JohnDoe/OneDrive - CompanyName/Communication site - Daily_SLA_Reporting')
    ```
-   (Change the path if you saved the folder somewhere other than Desktop)
    
-   **For Windows users**, the command might be:
+   ⚠️ **IMPORTANT**: Use forward slashes `/` (not backslashes `\`) in the path
+
+6. Save the file: Press `Ctrl + S`, then close the editor
+
+### Step 5: Test the Setup
+
+1. Open Command Prompt:
+   - Press `Win + R`
+   - Type `cmd` and press Enter
+
+2. Navigate to the script folder:
    ```cmd
-   python C:\\Users\\[your-username]\\Desktop\\DailySLAReporting\\daily_reporter.py
+   cd C:\Users\[YourUsername]\Desktop\DailySLAReporting
    ```
-   or
-   ```powershell
-   py .\\Desktop\\DailySLAReporting\\daily_reporter.py
+   (Replace [YourUsername] with your actual username)
+
+3. Run the script:
+   ```cmd
+   python daily_reporter.py
    ```
 
-### 3. Check Results
-After the script completes, you'll find output files in:
-- `[SharePoint Root]/[Today's Date]/Report_1_Comms_Reporting/DG1/output/` (or DG2, DG3, etc.)
-- Generated files:
-  - `Master_SLA_Report_[DATE].csv`
-  - `Intermediate_SLA_Report_[DATE].csv`
-  - `Final_SLA_Report_[DATE].csv`
-  - `SLA_Summary_DG1_[DATE].json`
+4. You should see:
+   ```
+   🚀 Daily Reporting System Started
+      Date: 2026-01-23
+      Base Path: C:\Users\...
+   ✓ Date folder ensured: ...
+   📁 Creating default DG folder structure...
+   ```
 
-## Validation Checks Performed
+5. If you see errors:
+   - **"python is not recognized"**: Python is not in PATH, reinstall Python with "Add to PATH" checked
+   - **"SharePoint base path does not exist"**: Your SharePoint path in Step 4 is incorrect
+   - **Other errors**: Check that OneDrive is syncing and you have access to the SharePoint site
 
-### 1. File Name Validation
-- The script checks that all expected files are present
-- If files are missing or incorrectly named, you'll see an error message
-- Fix the files in SharePoint and run the script again
+✅ **Setup Complete!** You're now ready for daily operations.
 
-### 2. Column Name Validation
-- The script validates that each file has the correct column headers
-- If columns are missing or misnamed, you'll see which files need correction
-- Update the files in SharePoint and run the script again
+## Daily Workflow
 
-### 3. Data Processing Summary
-- After processing, the script displays in the terminal:
-  - Final communication status summary (Communicating/Never Comm/Non Comm)
-  - Missing data summary
-  - Mapping summary showing how many records were successfully merged
+### Morning: Folder Creation (Automatic at 10 AM if scheduled, or manual)
 
-## Troubleshooting
+The system creates today's folder structure automatically. If you need to create it manually:
 
-### Common Issues:
-1. **"File not found" errors**: Check that your SharePoint path is correct in the script
-2. **Validation errors**: Upload corrected files to SharePoint and run again
-3. **Permission errors**: Ensure you have read/write access to the SharePoint folders
-4. **Python not found**: Install Python 3.x or use `python3` instead of `python` (Mac/Linux) or `py` instead of `python` (Windows)
+1. Open Command Prompt
+2. Navigate to the script folder:
+   ```cmd
+   cd C:\Users\[YourUsername]\Desktop\DailySLAReporting
+   ```
+3. Run:
+   ```cmd
+   python daily_reporter.py
+   ```
+4. The system will create:
+   ```
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG1\raw_data\
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG1\output\
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG2\raw_data\
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG2\output\
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG3\raw_data\
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG3\output\
+   ```
 
-### Error Messages:
-- ❌ FILE VALIDATION ISSUES: Upload the correct files to SharePoint
-- ❌ Column validation failed: Fix column names in your data files
-- ✅ All expected files present: Files are correctly named
-- ✅ All file columns validated successfully: Column names are correct
+### Step 1: Upload Raw Data Files to SharePoint
 
-## Output Files Explained
+1. Open File Explorer
 
-1. **Master_SLA_Report_[DATE].csv**: Combined data from all sources
-2. **Intermediate_SLA_Report_[DATE].csv**: Selected columns before communication status calculation
-3. **Final_SLA_Report_[DATE].csv**: Final report with communication status and remarks column
-4. **SLA_Summary_DGx_[DATE].json**: JSON summary with communication status and missing data counts
+2. Navigate to your SharePoint folder (the OneDrive sync location)
 
-## Running the Script Multiple Times
-- You can run the script multiple times in a day
-- It will overwrite existing output files with fresh results
-- If you want to preserve previous runs, rename or move the output files before re-running
+3. Go to today's date folder:
+   ```
+   OneDrive\Communication site - Daily_SLA_Reporting\2026-01-23\Report_1_Comms_Reporting\DG1\raw_data\
+   ```
+
+4. Upload these 7 required files:
+   - ✅ `Warehouse.csv`
+   - ✅ `New_Service_connection.csv`
+   - ✅ `Merged_CI-MI.csv`
+   - ✅ `Meter_Installation.csv`
+   - ✅ `Node ID.xlsx`
+   - ✅ `Routings Part-1.xlsx`
+   - ✅ `Routings Part-2.xlsx` (optional if you have multiple routing files)
+
+5. **Important File Naming Rules:**
+   - File names must match EXACTLY (case-sensitive)
+   - Use the exact spelling and spacing shown above
+   - CSV files must be saved as CSV (not Excel)
+   - Excel files must be .xlsx format
+
+6. **Repeat for DG2 and DG3** if you have data for those divisions:
+   - Upload the same file types to `DG2\raw_data\` and `DG3\raw_data\`
+
+7. **Wait for OneDrive sync**:
+   - Check the OneDrive icon in system tray
+   - Wait until it shows "Up to date" or green checkmark
+   - This usually takes 1-2 minutes
+
+### Step 2: Run the Processing Script
+
+1. Open Command Prompt:
+   - Press `Win + R`
+   - Type `cmd` and press Enter
+
+2. Navigate to the script folder:
+   ```cmd
+   cd C:\Users\[YourUsername]\Desktop\DailySLAReporting
+   ```
+
+3. Run the script:
+   ```cmd
+   python daily_reporter.py
+   ```
+
+4. Watch the progress. You'll see:
+   ```
+   🚀 Daily Reporting System Started
+   Processing Report_1_Comms_Reporting for 2026-01-23
+   
+   --- Processing DG1 ---
+   ✅ All expected files present
+   ✅ All file columns validated successfully
+   📦 Loading Warehouse base...
+   🔗 Merging New_Service_connection.csv...
+   🔗 Merging Merged_CI-MI.csv...
+   ...
+   ✨ Final report created: Final_SLA_Report_2026-01-23.csv
+   ✨ CSV Summary report created: Communication_Status_Summary_DG1_2026-01-23.csv
+   
+   📊 FINAL COMM STATUS SUMMARY FOR DG1:
+   === OVERALL ===
+      Communicating: 1250
+      Never Comm: 340
+      Non Comm: 210
+      Total Records: 1800
+   
+   === BY SUBDIVISION ===
+      North Division:
+         Communicating: 450
+         Never Comm: 120
+         Non Comm: 80
+         Total: 650
+   ```
+
+5. Processing time:
+   - Small datasets (< 5,000 records): 30-60 seconds
+   - Medium datasets (5,000-20,000 records): 1-3 minutes
+   - Large datasets (> 20,000 records): 3-5 minutes
+
+6. If you see errors, see the "Troubleshooting" section below
+
+### Step 3: Review Output Files
+
+1. Open File Explorer
+
+2. Navigate to the output folder:
+   ```
+   OneDrive\Communication site - Daily_SLA_Reporting\2026-01-23\Report_1_Comms_Reporting\DG1\output\
+   ```
+
+3. You'll find 5 output files:
+
+   **a) Master_SLA_Report_2026-01-23.csv**
+   - Contains ALL columns from ALL source files merged together
+   - Used for detailed analysis and troubleshooting
+   - Opens in Excel
+
+   **b) Intermediate_SLA_Report_2026-01-23.csv**
+   - Contains only the essential columns needed for reporting
+   - Cleaner dataset without communication status yet
+   - Opens in Excel
+
+   **c) Final_SLA_Report_2026-01-23.csv**
+   - **THIS IS YOUR MAIN REPORT**
+   - Includes communication status (Communicating/Never Comm/Non Comm)
+   - Includes blank "Remarks" column for manual notes
+   - Opens in Excel
+
+   **d) Communication_Status_Summary_2026-01-23.csv**
+   - **SUMMARY REPORT FOR MANAGEMENT**
+   - Shows counts by communication status (Overall + By Subdivision)
+   - Perfect for quick status overview
+   - Opens in Excel
+
+   **e) SLA_Summary_DG1_2026-01-23.json**
+   - Technical summary file with all metadata
+   - Includes missing data analysis
+   - Used for advanced analytics
+
+4. **Share the reports:**
+   - The files are already in SharePoint, so your team can access them
+   - You can also copy/email specific files as needed
+
+### Step 4: Verify Results
+
+1. Open `Final_SLA_Report_2026-01-23.csv` in Excel
+
+2. Quick checks:
+   - ✅ Total row count matches expected meters
+   - ✅ All critical columns are filled (Meter Serial No, Node ID, etc.)
+   - ✅ Communication status is calculated for all rows
+   - ✅ No unexpected blank values in key fields
+
+3. Open `Communication_Status_Summary_2026-01-23.csv` in Excel
+
+4. Review the summary:
+   - Check overall communication percentages
+   - Compare subdivision performance
+   - Identify areas needing attention
+
+### What to Do if Data Needs Correction
+
+1. Fix the source data files (CSV/Excel files in the raw_data folder)
+
+2. **Delete the old output files** (important!):
+   - Go to the output folder
+   - Delete all 5 output files
+
+3. Re-run the script:
+   ```cmd
+   python daily_reporter.py
+   ```
+
+4. New output files will be generated with corrected data
+
+## Understanding the Validation Checks
+
+The script performs automatic validation before processing:
+
+### File Name Validation
+
+**What it checks:**
+- All 7 required files are present in the raw_data folder
+- File names match exactly (case-sensitive)
+
+**If validation fails, you'll see:**
+```
+❌ FILE VALIDATION ISSUES:
+  Missing files: ['Node ID.xlsx', 'Routings Part-1.xlsx']
+  Unexpected files: ['node_id.xlsx', 'routing.xlsx']
+
+⚠️ Please upload the correct files and run again.
+```
+
+**How to fix:**
+1. Check the missing files list
+2. Verify file names match EXACTLY (including capitalization and spaces)
+3. Remove any unexpected files or rename them correctly
+4. Re-run the script
+
+### Column Name Validation
+
+**What it checks:**
+- Each file has all required column headers
+- Column names match expected names exactly
+
+**If validation fails, you'll see:**
+```
+🔍 Validating columns in Warehouse.csv...
+  ❌ Missing columns: ['Meter Serial No', 'Consumer Name']
+  ⚠️ Extra columns: ['Serial Number', 'Customer Name']
+```
+
+**How to fix:**
+1. Open the file in Excel
+2. Check the first row (column headers)
+3. Rename columns to match the expected names exactly
+4. Save the file
+5. Wait for OneDrive to sync
+6. Re-run the script
+
+### Data Completeness Check
+
+**After processing, you'll see:**
+```
+🔍 MISSING DATA SUMMARY:
+   Meters without Node ID: 45
+   Meters without routing info: 23
+   Rows missing Communicated At: 340
+```
+
+**What this means:**
+- Some meters in Warehouse.csv don't have matching entries in other files
+- This is normal if those meters are new or not yet commissioned
+- Review these numbers to ensure they're expected
+
+## Troubleshooting Common Issues
+
+### Issue 1: "python is not recognized as an internal or external command"
+
+**Cause:** Python is not installed or not added to PATH
+
+**Solution:**
+1. Open Command Prompt and try: `py --version`
+2. If that works, use `py` instead of `python` in all commands
+3. If not, reinstall Python from python.org
+4. During installation, check "Add Python to PATH"
+5. Restart your computer
+
+### Issue 2: "SharePoint base path does not exist"
+
+**Cause:** The SharePoint path in the script is incorrect or OneDrive isn't syncing
+
+**Solution:**
+1. Check OneDrive is running (icon in system tray)
+2. Open File Explorer and manually navigate to the SharePoint folder
+3. Copy the EXACT path from the address bar
+4. Edit `daily_reporter.py` and update the `sharepoint_path` line
+5. Use forward slashes `/` not backslashes `\`
+6. Save and try again
+
+### Issue 3: "FILE VALIDATION ISSUES: Missing files"
+
+**Cause:** Required files are not uploaded or named incorrectly
+
+**Solution:**
+1. Check the error message for which files are missing
+2. Verify file names match EXACTLY (case-sensitive):
+   - Correct: `Warehouse.csv`
+   - Wrong: `warehouse.csv`, `Warehouse.CSV`, `Warehouse .csv`
+3. Check you uploaded to the correct folder:
+   - Should be: `[Date]\Report_1_Comms_Reporting\DG1\raw_data\`
+   - Not: `[Date]\Report_1_Comms_Reporting\DG1\`
+4. Wait for OneDrive sync (green checkmark)
+5. Re-run the script
+
+### Issue 4: "Column validation failed: Missing columns"
+
+**Cause:** CSV/Excel files have incorrect column headers
+
+**Solution:**
+1. Open the problematic file in Excel
+2. Check row 1 (headers) matches expected names exactly
+3. Common mistakes:
+   - Extra spaces: "Meter Serial No " vs "Meter Serial No"
+   - Different names: "Serial Number" vs "Meter Serial No"
+   - Missing columns entirely
+4. Fix the headers in Excel
+5. Save the file (keep same format: CSV or XLSX)
+6. Wait for OneDrive sync
+7. Re-run the script
+
+### Issue 5: Script runs but no output files appear
+
+**Cause:** Script may have errored partway through
+
+**Solution:**
+1. Scroll up in the Command Prompt window
+2. Look for red error messages or ❌ symbols
+3. If you see "Permission denied" errors:
+   - Close any Excel files that might be open from the output folder
+   - Make sure you have write permissions to SharePoint
+4. If you see "Memory error":
+   - Close other programs to free up RAM
+   - Process smaller datasets (split by DG)
+5. Re-run the script
+
+### Issue 6: OneDrive not syncing / Files not updating
+
+**Cause:** OneDrive sync is paused or network issue
+
+**Solution:**
+1. Click OneDrive icon in system tray (bottom-right)
+2. Check status - should say "Up to date"
+3. If paused, click "Resume syncing"
+4. If showing errors, click "View sync problems"
+5. Make sure you're connected to the internet
+6. Try "Settings" → "Account" → "Unlink this PC" → Sign in again (last resort)
+
+### Issue 7: "No DG subfolders found"
+
+**Cause:** DG folders don't exist yet
+
+**Solution:**
+1. The script should create them automatically
+2. If not, manually create folders:
+   ```
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG1\raw_data
+   [SharePoint]\2026-01-23\Report_1_Comms_Reporting\DG1\output
+   ```
+3. Or delete the date folder and re-run the script to recreate everything
+
+### Issue 8: Script takes too long or appears frozen
+
+**What's normal:**
+- 1-2 minutes for small datasets (< 5,000 records)
+- 3-5 minutes for large datasets (> 20,000 records)
+
+**If it's truly frozen (> 10 minutes):**
+1. Press `Ctrl + C` to stop the script
+2. Check file sizes - are CSVs extremely large (> 100 MB)?
+3. Try processing one DG at a time
+4. Check Windows Task Manager - is Python using 100% CPU/memory?
+5. Restart your computer and try again
+
+### Getting Help
+
+If you still have issues:
+
+1. Take a screenshot of the error message
+2. Note:
+   - Which step you're on
+   - What command you ran
+   - What error message appeared
+3. Check with your IT team or system administrator
+4. Verify you have:
+   - Python 3.7+ installed
+   - OneDrive syncing properly
+   - Access to SharePoint site
+   - Required Python packages (pandas, openpyxl)
+
+## Reference: Required File Specifications
+
+### Warehouse.csv
+**Required columns:**
+- Meter Serial No
+- Feeder Name(From Field)
+- Consumer Name
+- Address
+- Mobile Number
+- Latitude
+- Longitude
+- Installed Sub Division
+- Division
+- Circle
+
+### New_Service_connection.csv
+**Required columns:**
+- New Meter QR Code  (note: has trailing space)
+- Feeder Name(From Field)
+- Consumer name
+- address
+- Mobile Number
+- Latitude
+- Longitude
+- Sub Division Name
+
+### Merged_CI-MI.csv
+**Required columns:**
+- New Meter QR Code
+- Feeder Name(From Field)
+- Consumer Name
+- Address
+- Mobile Number
+- Latitude
+- Longitude
+- Sub Division Name
+
+### Meter_Installation.csv
+**Required columns:**
+- New Meter Number Scan
+- Feeder Name(From Field)
+- Consumer Name
+- Address
+- Mobile Number
+- Latitude
+- Longitude
+- Sub Division Name
+
+### Node ID.xlsx
+**Required columns:**
+- Meter Number
+- NodeId
+
+### Routings Part-1.xlsx and Part-2.xlsx
+**Required columns:**
+- Node ID
+- Gateway ID
+- Hop Count
+- Sink ID
+- Communicated At
+- Source Endpoint
+
+---
+
+## Output File Descriptions
+
+### 1. Master_SLA_Report_[DATE].csv
+**Purpose:** Complete merged dataset with ALL columns from ALL source files
+
+**When to use:**
+- Detailed troubleshooting
+- Finding which source provided specific data
+- Verifying merge operations
+- Advanced analysis
+
+**Size:** Largest file (may have 50-100+ columns)
+
+### 2. Intermediate_SLA_Report_[DATE].csv
+**Purpose:** Cleaned dataset with only essential columns, before communication status calculation
+
+**When to use:**
+- Clean data export without communication status
+- When you need just the core meter information
+- As input for other systems
+
+**Columns:** ~20 essential columns
+
+### 3. Final_SLA_Report_[DATE].csv
+**Purpose:** ⭐ **MAIN REPORT** - Complete report with communication status
+
+**When to use:**
+- Primary daily report for field teams
+- Communication status tracking
+- Manual remarks entry
+- Distribution to stakeholders
+
+**Special columns:**
+- **Comm Status**: Communicating / Never Comm / Non Comm
+- **Remarks**: Blank column for manual notes
+
+### 4. Communication_Status_Summary_[DATE].csv
+**Purpose:** ⭐ **MANAGEMENT SUMMARY** - High-level status overview
+
+**When to use:**
+- Quick status dashboards
+- Management reports
+- Subdivision performance comparison
+- Daily status meetings
+
+**Format:**
+```
+Category      | Subdivision     | Communicating | Never Comm | Non Comm | Total
+---------------------------------------------------------------------------
+Overall       | All             | 1250          | 340        | 210      | 1800
+By Subdivision| North Division  | 450           | 120        | 80       | 650
+By Subdivision| South Division  | 380           | 95         | 70       | 545
+```
+
+### 5. SLA_Summary_DG[X]_[DATE].json
+**Purpose:** Technical metadata and detailed analytics
+
+**When to use:**
+- Automated systems integration
+- Advanced analytics platforms
+- Missing data analysis
+- Source file mapping statistics
+
+**Format:** JSON (machine-readable)
+
+---
+
+## Communication Status Definitions
+
+**Communicating:**
+- Meter communicated TODAY (same date as report)
+- Shows meter is active and transmitting
+- ✅ Good status
+
+**Non Comm:**
+- Meter communicated BEFORE but not today
+- Was working previously but not communicating now
+- ⚠️ Needs attention
+
+**Never Comm:**
+- Meter has NEVER communicated
+- New installation or faulty meter
+- ⚠️ Requires investigation
+
+---
+
+## Tips for Efficient Daily Operations
+
+### Time-Saving Shortcuts
+
+1. **Create a desktop shortcut:**
+   - Right-click `daily_reporter.py`
+   - Send to → Desktop (create shortcut)
+   - Double-click to run (if Python is associated with .py files)
+
+2. **Create a batch file for one-click execution:**
+   - Create a new text file on Desktop
+   - Name it `Run_SLA_Report.bat`
+   - Edit it and add:
+     ```batch
+     @echo off
+     cd C:\Users\[YourUsername]\Desktop\DailySLAReporting
+     python daily_reporter.py
+     pause
+     ```
+   - Save and double-click to run
+
+3. **Set up Windows Task Scheduler (optional):**
+   - Automatically runs the script at 10 AM daily
+   - Requires computer to be on at that time
+   - Contact IT for help setting this up
+
+### Best Practices
+
+1. **Run in the morning:** Process overnight data fresh each day
+
+2. **Check OneDrive sync:** Always verify files are synced before running
+
+3. **Review summaries:** Quickly scan the terminal output for anomalies
+
+4. **Keep outputs:** Don't delete old reports - they provide historical tracking
+
+5. **Backup important data:** Occasionally copy raw_data folders to a backup location
+
+6. **Monitor file sizes:** If CSVs suddenly become much larger, investigate why
+
+7. **Update Python occasionally:** Check for Python updates every few months
+
+### Data Quality Checklist
+
+Before running the script:
+- ✅ All 7 files uploaded
+- ✅ File names exactly correct
+- ✅ Files contain data (not empty)
+- ✅ CSV files are actually CSV format (not Excel saved as CSV)
+- ✅ Excel files open without errors
+- ✅ OneDrive shows "Up to date"
+
+After running the script:
+- ✅ No error messages in terminal
+- ✅ All 5 output files generated
+- ✅ Row counts look reasonable
+- ✅ Communication status summary makes sense
+- ✅ No unexpected "0" values in critical columns
+
+---
+
+## Frequently Asked Questions
+
+**Q: Can I run the script multiple times per day?**
+A: Yes! The script will overwrite previous outputs with fresh results.
+
+**Q: What if I only have data for DG1 and not DG2/DG3?**
+A: That's fine. The script will process whichever DG folders have data and skip empty ones.
+
+**Q: Can I rename the output files?**
+A: Yes, but don't rename them before re-running the script. The script will overwrite files with the same name.
+
+**Q: How long are reports kept?**
+A: Forever, unless you delete them. Each day creates a new date folder, so reports don't overwrite each other across days.
+
+**Q: Can multiple people run the script at once?**
+A: Yes, but they might overwrite each other's outputs. Coordinate with your team on who processes which DG.
+
+**Q: What if my computer crashes mid-processing?**
+A: Just re-run the script. It will start fresh. No partial files are saved.
+
+**Q: Can I edit the output files?**
+A: Yes, but if you re-run the script, your edits will be overwritten. Make edits in a copy of the file.
+
+**Q: Do I need internet access?**
+A: Yes, for OneDrive sync. The script itself runs locally, but needs synced SharePoint files.
+
+**Q: Can this run on Mac or Linux?**
+A: Yes! The script is cross-platform. Most instructions are similar, just use Terminal instead of Command Prompt.
+
+---
+
+## Version History
+
+**v2.0** (Current)
+- Added automatic folder structure creation
+- Added CSV summary report with subdivision breakdown
+- Improved validation and error messages
+- Added detailed user documentation
+
+**v1.0**
+- Initial release
+- Basic data processing and merging
+- JSON summary output
+
+---
+
+## Support Contacts
+
+For technical issues:
+- System Administrator: [Contact Info]
+- IT Help Desk: [Contact Info]
+
+For data issues:
+- Data Manager: [Contact Info]
+- Field Operations: [Contact Info]
