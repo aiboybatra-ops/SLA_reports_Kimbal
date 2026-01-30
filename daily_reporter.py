@@ -324,9 +324,9 @@ class DailyReporter:
         return sorted(files)
     
     def create_default_dg_structure(self, report_name):
-        """Create default DG subfolders (DG1, DG2, DG3) if they don't exist"""
+        """Create default DG subfolders (DG1, DG2) if they don't exist"""
         report_folder = self.report_date_folder / report_name
-        default_dgs = ["DG1", "DG2", "DG3"]
+        default_dgs = ["DG1", "DG2"]
         
         print(f"\n📁 Creating default DG folder structure...")
         for dg_name in default_dgs:
