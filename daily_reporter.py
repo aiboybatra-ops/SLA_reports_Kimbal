@@ -382,9 +382,9 @@ class DailyReporter:
             if not self.validate_filenames(raw_dir):
                 continue  # Skip this DG if files are invalid
                         
-            # Validate columns before processing
-            if not self.validate_columns(raw_dir):
-                continue  # Skip this DG if columns are invalid
+            # Validate columns before processing (warnings only, don't skip)
+            self.validate_columns(raw_dir)
+            # Continue processing even if column validation has warnings
                         
             # Ensure structure exists
             paths = self.create_dg_structure(report_name, dg_name)
@@ -407,6 +407,14 @@ class DailyReporter:
             print(f"📦 Loading Warehouse base...")
             df_master = pd.read_csv(warehouse_path)
             df_master['Meter Serial No'] = df_master['Meter Serial No'].astype(str).str.strip()
+            
+            # Filter for Kimbal manufacturer only
+            if 'Manufacturer' in df_master.columns:
+                original_count = len(df_master)
+                df_master = df_master[df_master['Manufacturer'].str.contains('KIMBAL', case=False, na=False)]
+                filtered_count = len(df_master)
+                print(f"🔍 Filtered manufacturers: {original_count} → {filtered_count} meters (Kimbal only)")
+            
             stats['Warehouse'] = {'total': len(df_master)}
                 
             # 2. Merge New_Service_connection
@@ -629,11 +637,17 @@ class DailyReporter:
                     dt = pd.to_datetime(comm_at, dayfirst=True, errors='coerce')
                     if pd.isna(dt):
                         return "Never Comm"
-                            
-                    if dt.strftime("%Y-%m-%d") == self.today_date:
+                    
+                    # Compare communication date with folder date
+                    comm_date_str = dt.strftime("%Y-%m-%d")
+                    
+                    if comm_date_str == self.today_date:
                         return "Communicating"
-                    else:
+                    elif comm_date_str < self.today_date:
                         return "Non Comm"
+                    else:
+                        # Future date - treat as Never Comm (data error)
+                        return "Never Comm"
                 except:
                     return "Never Comm"
             
@@ -704,58 +718,204 @@ class DailyReporter:
                 json.dump(summary, f, ensure_ascii=False, indent=2)
             print(f"📄 JSON Summary file created: {summary_output_path.name}")
             
-            # 10. Create CSV Summary Report (Overall + By Subdivision)
-            print(f"📝 Creating CSV summary report...")
+            # 10. Create Simplified CSV Summary Reports
+            print(f"📝 Creating simplified CSV summary reports...")
             
-            # Prepare overall summary row
+            # ===== REPORT 1: OVERALL STATUS & HIERARCHICAL BREAKDOWN =====
+            status_data = []
+            
+            # Overall row
             overall_row = {
                 "Category": "Overall",
-                "Subdivision": "All",
+                "Circle": "",
+                "Division": "",
+                "Subdivision": "",
                 "Communicating": summary['comm_status_overall']['Communicating'],
                 "Never Comm": summary['comm_status_overall']['Never Comm'],
                 "Non Comm": summary['comm_status_overall']['Non Comm'],
-                "Total": summary['total_records']
+                "Total": summary['total_records'],
+                "Communicating %": round(100 * summary['comm_status_overall']['Communicating'] / summary['total_records'], 2) if summary['total_records'] > 0 else 0
             }
+            status_data.append(overall_row)
             
-            # Prepare subdivision rows
-            subdivision_rows = []
-            if 'comm_status_by_subdivision' in summary and summary['comm_status_by_subdivision']:
-                for subdiv, counts in summary['comm_status_by_subdivision'].items():
-                    subdivision_rows.append({
-                        "Category": "By Subdivision",
-                        "Subdivision": subdiv,
-                        "Communicating": counts['Communicating'],
-                        "Never Comm": counts['Never Comm'],
-                        "Non Comm": counts['Non Comm'],
-                        "Total": counts['Total']
+            # Hierarchical breakdown
+            print(f"🏢 Creating hierarchical breakdown...")
+            
+            # By Circle
+            if 'Circle' in df_final.columns:
+                for circle in sorted(df_final['Circle'].dropna().unique()):
+                    circle_data = df_final[df_final['Circle'] == circle]
+                    circle_comm_counts = circle_data['Comm Status'].value_counts().to_dict()
+                    status_data.append({
+                        "Category": "By Circle",
+                        "Circle": str(circle),
+                        "Division": "",
+                        "Subdivision": "",
+                        "Communicating": int(circle_comm_counts.get("Communicating", 0)),
+                        "Never Comm": int(circle_comm_counts.get("Never Comm", 0)),
+                        "Non Comm": int(circle_comm_counts.get("Non Comm", 0)),
+                        "Total": int(len(circle_data)),
+                        "Communicating %": round(100 * circle_comm_counts.get("Communicating", 0) / len(circle_data), 2) if len(circle_data) > 0 else 0
                     })
             
-            # Combine and create DataFrame
-            summary_data = [overall_row] + subdivision_rows
-            df_summary = pd.DataFrame(summary_data)
+            # By Division
+            if 'Division' in df_final.columns:
+                for division in sorted(df_final['Division'].dropna().unique()):
+                    division_data = df_final[df_final['Division'] == division]
+                    division_comm_counts = division_data['Comm Status'].value_counts().to_dict()
+                    circle_val = division_data['Circle'].mode()[0] if 'Circle' in division_data.columns and len(division_data['Circle'].mode()) > 0 else ""
+                    
+                    status_data.append({
+                        "Category": "By Division",
+                        "Circle": str(circle_val),
+                        "Division": str(division),
+                        "Subdivision": "",
+                        "Communicating": int(division_comm_counts.get("Communicating", 0)),
+                        "Never Comm": int(division_comm_counts.get("Never Comm", 0)),
+                        "Non Comm": int(division_comm_counts.get("Non Comm", 0)),
+                        "Total": int(len(division_data)),
+                        "Communicating %": round(100 * division_comm_counts.get("Communicating", 0) / len(division_data), 2) if len(division_data) > 0 else 0
+                    })
             
-            # Save CSV summary report
-            summary_csv_path = paths["output"] / f"Communication_Status_Summary_{dg_name}_{self.today_date}.csv"
-            df_summary.to_csv(summary_csv_path, index=False)
-            print(f"✨ CSV Summary report created: {summary_csv_path.name}")
+            # By Subdivision
+            if 'Subdivision' in df_final.columns:
+                for subdivision in sorted(df_final['Subdivision'].dropna().unique()):
+                    subdivision_data = df_final[df_final['Subdivision'] == subdivision]
+                    subdivision_comm_counts = subdivision_data['Comm Status'].value_counts().to_dict()
+                    circle_val = subdivision_data['Circle'].mode()[0] if 'Circle' in subdivision_data.columns and len(subdivision_data['Circle'].mode()) > 0 else ""
+                    division_val = subdivision_data['Division'].mode()[0] if 'Division' in subdivision_data.columns and len(subdivision_data['Division'].mode()) > 0 else ""
+                    
+                    status_data.append({
+                        "Category": "By Subdivision",
+                        "Circle": str(circle_val),
+                        "Division": str(division_val),
+                        "Subdivision": str(subdivision),
+                        "Communicating": int(subdivision_comm_counts.get("Communicating", 0)),
+                        "Never Comm": int(subdivision_comm_counts.get("Never Comm", 0)),
+                        "Non Comm": int(subdivision_comm_counts.get("Non Comm", 0)),
+                        "Total": int(len(subdivision_data)),
+                        "Communicating %": round(100 * subdivision_comm_counts.get("Communicating", 0) / len(subdivision_data), 2) if len(subdivision_data) > 0 else 0
+                    })
+            
+            df_status = pd.DataFrame(status_data)
+            status_path = paths["output"] / f"Comm_Status_Summary_{dg_name}_{self.today_date}.csv"
+            df_status.to_csv(status_path, index=False)
+            print(f"✨ Status summary: {status_path.name}")
+            
+            # ===== REPORT 2: AGEING ANALYSIS =====
+            print(f"📊 Analyzing ageing for Non Comm and Never Comm meters...")
+            ageing_data = []
+            
+            # Age buckets
+            age_buckets = {
+                '1-7 days': (1, 7),
+                '8-15 days': (8, 15),
+                '16-30 days': (16, 30),
+                '31-60 days': (31, 60),
+                '61-90 days': (61, 90),
+                '>90 days': (91, 999999)
+            }
+            
+            if 'Communicated At' in df_final.columns:
+                non_comm_df = df_final[df_final['Comm Status'] == 'Non Comm'].copy()
+                never_comm_df = df_final[df_final['Comm Status'] == 'Never Comm'].copy()
+                
+                # Calculate ageing for Non Comm (days since last communication)
+                if len(non_comm_df) > 0:
+                    def calculate_days_since_comm(comm_at):
+                        try:
+                            dt = pd.to_datetime(comm_at, dayfirst=True, errors='coerce')
+                            if pd.notna(dt):
+                                today = pd.to_datetime(self.today_date)
+                                return (today - dt).days
+                        except:
+                            pass
+                        return None
+                    
+                    non_comm_df['Days_Since_Comm'] = non_comm_df['Communicated At'].apply(calculate_days_since_comm)
+                    
+                    for bucket_name, (min_days, max_days) in age_buckets.items():
+                        count = len(non_comm_df[(non_comm_df['Days_Since_Comm'] >= min_days) & 
+                                                (non_comm_df['Days_Since_Comm'] <= max_days)])
+                        ageing_data.append({
+                            "Category": "Non Comm",
+                            "Age Bucket": bucket_name,
+                            "Count": count,
+                            "Percentage": round(100 * count / len(non_comm_df), 2) if len(non_comm_df) > 0 else 0
+                        })
+                
+                # Calculate ageing for Never Comm (days since installation)
+                if len(never_comm_df) > 0 and 'Installation date' in never_comm_df.columns:
+                    def calculate_days_since_installation(inst_date):
+                        try:
+                            dt = pd.to_datetime(inst_date, dayfirst=True, errors='coerce')
+                            if pd.notna(dt):
+                                today = pd.to_datetime(self.today_date)
+                                return (today - dt).days
+                        except:
+                            pass
+                        return None
+                    
+                    never_comm_df['Days_Since_Installation'] = never_comm_df['Installation date'].apply(calculate_days_since_installation)
+                    
+                    for bucket_name, (min_days, max_days) in age_buckets.items():
+                        count = len(never_comm_df[(never_comm_df['Days_Since_Installation'] >= min_days) & 
+                                                  (never_comm_df['Days_Since_Installation'] <= max_days)])
+                        ageing_data.append({
+                            "Category": "Never Comm",
+                            "Age Bucket": bucket_name,
+                            "Count": count,
+                            "Percentage": round(100 * count / len(never_comm_df), 2) if len(never_comm_df) > 0 else 0
+                        })
+            
+            if ageing_data:
+                df_ageing = pd.DataFrame(ageing_data)
+                ageing_path = paths["output"] / f"Comm_Ageing_Analysis_{dg_name}_{self.today_date}.csv"
+                df_ageing.to_csv(ageing_path, index=False)
+                print(f"✨ Ageing analysis: {ageing_path.name}")
             
             # Print final summary to terminal
-            print(f"\n📊 FINAL COMM STATUS SUMMARY FOR {dg_name}:")
-            print(f"\n=== OVERALL ===")
-            print(f"   Communicating: {summary['comm_status_overall']['Communicating']}")
+            print(f"\n{'='*60}")
+            print(f"📊 SIMPLIFIED COMM STATUS SUMMARY FOR {dg_name}")
+            print(f"{'='*60}")
+            
+            print(f"\n=== OVERALL COMM STATUS ===")
+            overall_comm = summary['comm_status_overall']['Communicating']
+            overall_total = summary['total_records']
+            overall_pct = round(100 * overall_comm / overall_total, 2) if overall_total > 0 else 0
+            print(f"   Communicating: {overall_comm} ({overall_pct}%)")
             print(f"   Never Comm: {summary['comm_status_overall']['Never Comm']}")
             print(f"   Non Comm: {summary['comm_status_overall']['Non Comm']}")
-            print(f"   Total Records: {summary['total_records']}")
+            print(f"   Total Records: {overall_total}")
             
-            # Print subdivision breakdown
-            if 'comm_status_by_subdivision' in summary and summary['comm_status_by_subdivision']:
-                print(f"\n=== BY SUBDIVISION ===")
-                for subdiv, counts in sorted(summary['comm_status_by_subdivision'].items()):
-                    print(f"\n   {subdiv}:")
-                    print(f"      Communicating: {counts['Communicating']}")
-                    print(f"      Never Comm: {counts['Never Comm']}")
-                    print(f"      Non Comm: {counts['Non Comm']}")
-                    print(f"      Total: {counts['Total']}")
+            # Print hierarchical summary
+            circles = len([item for item in status_data if item['Category'] == 'By Circle'])
+            divisions = len([item for item in status_data if item['Category'] == 'By Division'])
+            subdivisions = len([item for item in status_data if item['Category'] == 'By Subdivision'])
+            
+            print(f"\n=== HIERARCHICAL BREAKDOWN ===")
+            print(f"   Circles: {circles}")
+            print(f"   Divisions: {divisions}")
+            print(f"   Subdivisions: {subdivisions}")
+            
+            # Print ageing summary
+            if ageing_data:
+                print(f"\n=== AGEING ANALYSIS ===")
+                
+                non_comm_ageing = [item for item in ageing_data if item['Category'] == 'Non Comm']
+                never_comm_ageing = [item for item in ageing_data if item['Category'] == 'Never Comm']
+                
+                if non_comm_ageing:
+                    print(f"\n   Non Comm Meters (days since last communication):")
+                    for item in non_comm_ageing:
+                        if item['Count'] > 0:
+                            print(f"      {item['Age Bucket']}: {item['Count']} meters ({item['Percentage']}%)")
+                
+                if never_comm_ageing:
+                    print(f"\n   Never Comm Meters (days since installation):")
+                    for item in never_comm_ageing:
+                        if item['Count'] > 0:
+                            print(f"      {item['Age Bucket']}: {item['Count']} meters ({item['Percentage']}%)")
             
             # Print missing data summary
             missing_summary = summary['missing_data_summary']
@@ -883,6 +1043,9 @@ class DailyReporter:
         for actual in actual_files:
             if actual not in expected_files:
                 # Allow other routing files that match pattern
+                # Ignore macOS system files
+                if actual in ['.DS_Store', 'Thumbs.db', 'desktop.ini']:
+                    continue
                 if not (actual.startswith("Routings") and actual.endswith((".xlsx", ".xls"))):
                     extra_files.append(actual)
         

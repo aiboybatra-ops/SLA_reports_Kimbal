@@ -148,7 +148,9 @@ SharePoint/OneDrive Root/
 
 ## Output Files
 
-### 1. Final_SLA_Report_[DATE].csv
+### Core Reports
+
+#### 1. Final_SLA_Report_[DATE].csv
 ⭐ **Primary Report** - Complete meter data with communication status
 
 **Columns include:**
@@ -160,24 +162,66 @@ SharePoint/OneDrive Root/
 - **Comm Status** (Communicating / Never Comm / Non Comm)
 - **Remarks** (Blank for manual notes)
 
-### 2. Communication_Status_Summary_[DATE].csv
-⭐ **Management Dashboard** - High-level status overview
-
-**Format:**
-| Category | Subdivision | Communicating | Never Comm | Non Comm | Total |
-|----------|-------------|---------------|------------|----------|-------|
-| Overall | All | 1250 | 340 | 210 | 1800 |
-| By Subdivision | North Division | 450 | 120 | 80 | 650 |
-| By Subdivision | South Division | 380 | 95 | 70 | 545 |
-
-### 3. Master_SLA_Report_[DATE].csv
+#### 2. Master_SLA_Report_[DATE].csv
 Complete merged dataset with all columns from all sources (50-100+ columns)
 
-### 4. Intermediate_SLA_Report_[DATE].csv
+#### 3. Intermediate_SLA_Report_[DATE].csv
 Cleaned dataset with essential columns only (~20 columns)
 
-### 5. SLA_Summary_DG[X]_[DATE].json
+### Communication Status Summary Reports (NEW! 📊)
+
+The system now generates **5 comprehensive communication status reports** for in-depth analysis:
+
+#### 4. Comm_Summary_Overall_[DG]_[DATE].csv
+⭐ High-level summary with total counts and percentages
+
+#### 5. Comm_Summary_Ageing_[DG]_[DATE].csv
+⭐ **Age analysis** for Non Comm and Never Comm meters
+- Non Comm: Days since last communication (1-7, 8-15, 16-30, 31-60, 61-90, >90 days)
+- Never Comm: Days since installation (same buckets)
+- **Use for:** Prioritizing field visits and maintenance
+
+#### 6. Comm_Summary_DateTrends_[DG]_[DATE].csv
+⭐ **Daily trends** showing communication patterns over time
+- **Use for:** Tracking improvement, identifying problem dates
+
+#### 7. Comm_Summary_Hierarchical_[DG]_[DATE].csv
+⭐ **Geographic breakdown** by Circle → Division → Subdivision
+- Complete hierarchical analysis with percentages
+- **Use for:** Identifying problem areas, resource allocation
+
+#### 8. Comm_Summary_Master_[DG]_[DATE].csv
+⭐ **All-in-one report** combining all analyses above
+- **Use for:** Complete analysis, stakeholder reports, Power BI import
+
+#### 9. SLA_Summary_DG[X]_[DATE].json
 Technical metadata including missing data analysis and mapping statistics
+
+---
+
+📚 **Detailed Documentation:**
+- [Comm Status Reports Guide](COMM_STATUS_REPORTS_GUIDE.md) - Complete feature documentation
+- [Quick Reference](QUICK_REFERENCE_COMM_REPORTS.md) - Fast lookup and tips
+- [Report Structures](REPORT_STRUCTURES_REFERENCE.md) - Data formats and Excel tips
+
+### Sample Summary Report Format:
+
+**Overall Summary:**
+| Category | Grouping | Communicating | Never Comm | Non Comm | Total | Communicating % |
+|----------|----------|---------------|------------|----------|-------|-----------------|
+| Overall | All | 25000 | 3000 | 2000 | 30000 | 83.33 |
+
+**Ageing Analysis:**
+| Category | Grouping | Count | Percentage |
+|----------|----------|-------|------------|
+| Ageing - Non Comm | 1-7 days | 150 | 7.5 |
+| Ageing - Non Comm | 8-15 days | 280 | 14.0 |
+
+**Hierarchical Breakdown:**
+| Category | Circle | Division | Subdivision | Communicating | Never Comm | Non Comm | Total | Comm % |
+|----------|--------|----------|-------------|---------------|------------|----------|-------|--------|
+| By Circle | BHARUCH-35 | | | 20500 | 2000 | 1500 | 24000 | 85.42 |
+| By Division | BHARUCH-35 | ANKLESHWAR IND-23 | | 10200 | 1000 | 800 | 12000 | 85.00 |
 
 ## Communication Status Definitions
 
